@@ -1,0 +1,33 @@
+on: [push, pull_request]
+
+name: CI
+
+jobs:
+
+  ubuntu:
+    name: "cmake on ${{ matrix.runner }}"
+    runs-on: "${{ matrix.runner }}"
+    strategy:
+      matrix:
+        runner:
+          - "ubuntu-20.04"  # cmake 3.16
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install qt and build tools
+        run: |
+          sudo apt-get update &&
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config g++ make cmake \
+            qt5-default qttools5-dev-tools
+      - name: Show cmake version
+        run: cmake --version
+      - name: Run cmake
+        run: cmake -S . -B build -DQUAZIP_ENABLE_TESTS=ON
+      - name: Build quazip
+        run: cd build && VERBOSE=1 make -j8
+      - name: Build tests
+        run: cd build/qztest && VERBOSE=1 make -j8
+      - name: Run tests
+        run: build/qztest/qztest
